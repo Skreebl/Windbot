@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Архів погоди Windguru — Zambujeira do Mar</title>
+    <title>Архів погоди Windguru — Динамічний</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -28,7 +28,8 @@
         .controls {
             margin-bottom: 25px;
             display: flex;
-            gap: 15px;
+            flex-direction: column;
+            gap: 10px;
             align-items: center;
             background: var(--card-bg);
             padding: 15px 25px;
@@ -44,52 +45,38 @@
             border-radius: 6px;
             font-size: 16px;
         }
-        .tabs {
-            display: flex;
-            gap: 10px;
-        }
-        .tab-btn {
-            padding: 8px 16px;
-            border: none;
-            background: #e0e0e0;
-            cursor: pointer;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            background: var(--accent-color);
-            color: white;
-        }
-        .image-container {
+        .gallery {
             max-width: 100%;
             width: 1280px;
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 16px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
             display: flex;
             flex-direction: column;
-            align-items: center;
+            gap: 30px;
         }
-        .image-container img {
+        .screenshot-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        }
+        .screenshot-time {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: var(--accent-color);
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 6px;
+        }
+        .screenshot-card img {
             max-width: 100%;
             height: auto;
             border-radius: 8px;
-            display: none;
-        }
-        .image-container img.visible {
             display: block;
         }
-        .no-data {
+        .status-message {
             padding: 40px;
             text-align: center;
             color: #888;
             font-size: 18px;
-            display: none;
-        }
-        .no-data.visible {
-            display: block;
         }
     </style>
 </head>
@@ -98,78 +85,90 @@
     <h1>Архів прогнозів Windguru 🌊</h1>
 
     <div class="controls">
-        <label for="date-picker">Обери дату:</label>
+        <label for="date-picker">Обери дату для перегляду:</label>
         <input type="date" id="date-picker">
-        
-        <div class="tabs">
-            <button class="tab-btn active" onclick="changeTime('04-30')">Ранок (04:30)</button>
-            <button class="tab-btn" onclick="changeTime('11-50')">День (11:50)</button>
-        </div>
     </div>
 
-    <div class="image-container">
-        <img id="weather-screenshot" src="" alt="Прогноз погоди">
-        <div id="error-message" class="no-data">Немає збереженого скріншоту за цей час 🤷‍♂️</div>
-    </div>
+    <div id="status" class="status-message">Завантаження списку скріншотів...</div>
+    <div id="gallery" class="gallery"></div>
 
     <script>
-        // Конфігурація: вкажи назву папки, якщо міняв її в Make.com
+        // НАЛАШТУВАННЯ: впиши сюди свій нік на GitHub та назву репозиторію
+        const githubUser = 'ТВІЙ_GITHUB_НІКНЕЙМ'; 
+        const repoName = 'НАЗВА_РЕПОЗИТОРІЮ';
         const folderName = 'images'; 
-        
-        let selectedTime = '04-30'; // Час за замовчуванням
-        const datePicker = document.getElementById('date-picker');
-        const imgElement = document.getElementById('weather-screenshot');
-        const errorElement = document.getElementById('error-message');
 
-        // Встановлюємо сьогоднішню дату в календар при завантаженні сторінки
+        const datePicker = document.getElementById('date-picker');
+        const gallery = document.getElementById('gallery');
+        const statusMessage = document.getElementById('status');
+
+        let allFiles = [];
+
+        // Встановлюємо сьогоднішню дату за замовчуванням
         const today = new Date().toISOString().split('T')[0];
         datePicker.value = today;
 
-        // Функція для оновлення скріншоту на екрані
-        function updateScreenshot() {
-            const date = datePicker.value; // Формат YYYY-MM-DD
-            if (!date) return;
-
-            // Збираємо шлях до файлу, який згенерував Make.com (наприклад: images/2026-06-13_04-30.png)
-            const imgUrl = `${folderName}/${date}_${selectedTime}.png`;
-
-            // Скидаємо видимість перед завантаженням
-            imgElement.classList.remove('visible');
-            errorElement.classList.remove('visible');
-
-            // Спроба завантажити картинку
-            imgElement.src = imgUrl;
+        // Крок 1: Запитуємо у GitHub API повний список файлів у папці images
+        async function fetchFilesList() {
+            const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${folderName}`;
+            try {
+                statusMessage.textContent = "Зчитуємо архів з GitHub...";
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Не вдалося отримати дані');
+                
+                const data = await response.ok ? await response.json() : [];
+                // Фільтруємо тільки .png файли
+                allFiles = data.filter(file => file.name.endsWith('.png'));
+                
+                statusMessage.textContent = "";
+                renderScreenshots(); // Відображаємо скріншоти для поточної дати
+            } catch (error) {
+                statusMessage.textContent = "Помилка завантаження архіву. Перевірте налаштування репозиторію.";
+                console.error(error);
+            }
         }
 
-        // Якщо картинка успішно знайшлась і завантажилась
-        imgElement.onload = function() {
-            imgElement.classList.add('visible');
-        };
+        // Крок 2: Фільтруємо файли за обраною датою та виводимо на екран
+        function renderScreenshots() {
+            gallery.innerHTML = ""; // Очищаємо галерею
+            const selectedDate = datePicker.value; // Формат: YYYY-MM-DD
 
-        // Якщо файлу для цієї дати/години немає в репозиторії
-        imgElement.onerror = function() {
-            imgElement.classList.remove('visible');
-            errorElement.classList.add('visible');
-        };
+            if (!selectedDate) return;
 
-        // Перемикання між ранковим та денним скріншотом
-        function changeTime(time) {
-            selectedTime = time;
-            
-            // Перемикаємо активний клас на кнопках
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
+            // Шукаємо файли, які починаються з обраної дати (наприклад: 2026-06-13_)
+            const filteredFiles = allFiles.filter(file => file.name.startsWith(selectedDate + '_'));
+
+            if (filteredFiles.length === 0) {
+                statusMessage.textContent = "За цей день немає збережених скріншотів 🤷‍♂️";
+                return;
+            }
+
+            statusMessage.textContent = "";
+
+            // Сортуємо файли по часу (від раніших до пізніших)
+            filteredFiles.sort((a, b) => a.name.localeCompare(b.name));
+
+            // Генеруємо картки для кожного знайденого скріншоту
+            filteredFiles.forEach(file => {
+                // Витягуємо час з імені файлу (наприклад, з "2026-06-13_15-45.png" беремо "15:45")
+                const timePart = file.name.split('_')[1].replace('.png', '').replace('-', ':');
+
+                const card = document.createElement('div');
+                card.className = 'screenshot-card';
+
+                card.innerHTML = `
+                    <div class="screenshot-time">⏱ Скріншот зроблено о ${timePart}</div>
+                    <img src="${file.path}" alt="Прогноз погоди на ${timePart}">
+                `;
+                gallery.appendChild(card);
             });
-            event.target.classList.add('active');
-
-            updateScreenshot();
         }
 
-        // Слідкуємо за зміною дати в календарі
-        datePicker.addEventListener('change', updateScreenshot);
+        // Слідкуємо за зміною дати
+        datePicker.addEventListener('change', renderScreenshots);
 
-        // Перший запуск при завантаженні сторінки
-        updateScreenshot();
+        // Запуск процесу
+        fetchFilesList();
     </script>
 </body>
 </html>
