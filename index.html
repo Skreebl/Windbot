@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Архів погоди Windguru — Динамічний</title>
+    <title>Архів погоди Windguru — Галерея</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -45,38 +45,93 @@
             border-radius: 6px;
             font-size: 16px;
         }
+        /* Сітка для мініатюр */
         .gallery {
             max-width: 100%;
-            width: 1280px;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
+            width: 1200px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 10px;
         }
         .screenshot-card {
             background: var(--card-bg);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .screenshot-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
         .screenshot-time {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: bold;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             color: var(--accent-color);
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 6px;
+            text-align: center;
+        }
+        /* Обмежуємо розмір мініатюри */
+        .thumbnail-wrapper {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            border-radius: 6px;
+            position: relative;
+            background: #eee;
         }
         .screenshot-card img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Обрізає картинку під прямокутник прев'ю */
+            object-position: top; /* Показує саме верхню частину сайту в прев'ю */
         }
         .status-message {
             padding: 40px;
             text-align: center;
             color: #888;
             font-size: 18px;
+        }
+
+        /* Стилі для повноекранного модального вікна */
+        .modal {
+            display: none; /* Сховано за замовчуванням */
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            overflow-y: auto;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 10px;
+            box-sizing: border-box;
+        }
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 95%;
+            width: 1280px; /* Реальна ширина скріншоту */
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(255,255,255,0.2);
+        }
+        .close-btn {
+            position: fixed;
+            top: 15px;
+            right: 25px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            z-index: 1001;
         }
     </style>
 </head>
@@ -92,50 +147,55 @@
     <div id="status" class="status-message">Завантаження списку скріншотів...</div>
     <div id="gallery" class="gallery"></div>
 
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="full-image">
+    </div>
+
     <script>
-        // НАЛАШТУВАННЯ: впиши сюди свій нік на GitHub та назву репозиторію
-        const githubUser = 'Skreebl'; 
+        // НАЛАШТУВАННЯ: Обов'язково впиши свій нік та назву репозиторію
+        const githubUser = 'ТВІЙ_GITHUB_НІКНЕЙМ'; 
         const repoName = 'Windbot';
         const folderName = 'images'; 
 
         const datePicker = document.getElementById('date-picker');
         const gallery = document.getElementById('gallery');
         const statusMessage = document.getElementById('status');
+        const modal = document.getElementById('imageModal');
+        const fullImg = document.getElementById('full-image');
 
         let allFiles = [];
 
-        // Встановлюємо сьогоднішню дату за замовчуванням
+        // Встановлюємо сьогоднішню дату
         const today = new Date().toISOString().split('T')[0];
         datePicker.value = today;
 
-        // Крок 1: Запитуємо у GitHub API повний список файлів у папці images
+        // Крок 1: Беремо список файлів з GitHub
         async function fetchFilesList() {
             const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${folderName}`;
             try {
                 statusMessage.textContent = "Зчитуємо архів з GitHub...";
                 const response = await fetch(url);
-                if (!response.ok) throw new Error('Не вдалося отримати дані');
+                if (!response.ok) throw new Error('Помилка API');
                 
-                const data = await response.ok ? await response.json() : [];
-                // Фільтруємо тільки .png файли
+                const data = await response.json();
                 allFiles = data.filter(file => file.name.endsWith('.png'));
                 
                 statusMessage.textContent = "";
-                renderScreenshots(); // Відображаємо скріншоти для поточної дати
+                renderScreenshots();
             } catch (error) {
-                statusMessage.textContent = "Помилка завантаження архіву. Перевірте налаштування репозиторію.";
+                statusMessage.textContent = "Помилка завантаження архіву. Перевірте налаштування.";
                 console.error(error);
             }
         }
 
-        // Крок 2: Фільтруємо файли за обраною датою та виводимо на екран
+        // Крок 2: Виводимо мініатюри
         function renderScreenshots() {
-            gallery.innerHTML = ""; // Очищаємо галерею
-            const selectedDate = datePicker.value; // Формат: YYYY-MM-DD
+            gallery.innerHTML = "";
+            const selectedDate = datePicker.value;
 
             if (!selectedDate) return;
 
-            // Шукаємо файли, які починаються з обраної дати (наприклад: 2026-06-13_)
             const filteredFiles = allFiles.filter(file => file.name.startsWith(selectedDate + '_'));
 
             if (filteredFiles.length === 0) {
@@ -144,30 +204,44 @@
             }
 
             statusMessage.textContent = "";
-
-            // Сортуємо файли по часу (від раніших до пізніших)
             filteredFiles.sort((a, b) => a.name.localeCompare(b.name));
 
-            // Генеруємо картки для кожного знайденого скріншоту
             filteredFiles.forEach(file => {
-                // Витягуємо час з імені файлу (наприклад, з "2026-06-13_15-45.png" беремо "15:45")
                 const timePart = file.name.split('_')[1].replace('.png', '').replace('-', ':');
 
                 const card = document.createElement('div');
                 card.className = 'screenshot-card';
+                // При кліку на картку відкриваємо модалку
+                card.onclick = () => openModal(file.path);
 
                 card.innerHTML = `
-                    <div class="screenshot-time">⏱ Скріншот зроблено о ${timePart}</div>
-                    <img src="${file.path}" alt="Прогноз погоди на ${timePart}">
+                    <div class="screenshot-time">⏱ Скріншот о ${timePart}</div>
+                    <div class="thumbnail-wrapper">
+                        <img src="${file.path}" alt="Прогноз погоди">
+                    </div>
                 `;
                 gallery.appendChild(card);
             });
         }
 
-        // Слідкуємо за зміною дати
-        datePicker.addEventListener('change', renderScreenshots);
+        // Функції для модального вікна (Повний екран)
+        function openModal(imageSrc) {
+            modal.style.display = "flex";
+            fullImg.src = imageSrc;
+            document.body.style.overflow = "hidden"; // Забороняємо гортати задній фон
+        }
 
-        // Запуск процесу
+        function closeModal() {
+            modal.style.display = "none";
+            document.body.style.overflow = "auto"; // Повертаємо прокрутку сторінки
+        }
+
+        // Закриття по кнопці Esc
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        datePicker.addEventListener('change', renderScreenshots);
         fetchFilesList();
     </script>
 </body>
