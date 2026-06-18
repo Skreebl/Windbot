@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Архів погоди Windguru — Галерея</title>
+    <title>Arquivo Meteorológico — Zambujeira do Mar</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -22,30 +22,70 @@
             align-items: center;
         }
         h1 {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             text-align: center;
+            font-size: 28px;
+        }
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            color: #666;
+            font-weight: 400;
         }
         .controls {
             margin-bottom: 25px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
             align-items: center;
             background: var(--card-bg);
-            padding: 15px 25px;
+            padding: 20px 25px;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 100%;
         }
         label {
             font-weight: 600;
+            font-size: 14px;
         }
         input[type="date"] {
-            padding: 8px 12px;
+            padding: 10px 12px;
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
         }
-        /* Сітка для мініатюр */
+        /* Перемикач вкладок (Tabs) */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: #e4e7e6;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            font-size: 14px;
+        }
+        .tab-btn.active {
+            background: var(--accent-color);
+            color: white;
+        }
+        /* Сітка галереї */
         .gallery {
             max-width: 100%;
             width: 1200px;
@@ -53,6 +93,7 @@
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
             padding: 10px;
+            box-sizing: border-box;
         }
         .screenshot-card {
             background: var(--card-bg);
@@ -69,16 +110,15 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
         .screenshot-time {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             margin-bottom: 8px;
             color: var(--accent-color);
             text-align: center;
         }
-        /* Обмежуємо розмір мініатюри */
         .thumbnail-wrapper {
             width: 100%;
-            height: 200px;
+            height: 180px;
             overflow: hidden;
             border-radius: 6px;
             position: relative;
@@ -87,38 +127,35 @@
         .screenshot-card img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Обрізає картинку під прямокутник прев'ю */
-            object-position: top; /* Показує саме верхню частину сайту в прев'ю */
+            object-fit: cover;
+            object-position: top;
         }
         .status-message {
             padding: 40px;
             text-align: center;
             color: #888;
-            font-size: 18px;
+            font-size: 16px;
         }
 
-        /* Стилі для повноекранного модального вікна */
+        /* Модальне вікно (Повний екран) */
         .modal {
-            display: none; /* Сховано за замовчуванням */
+            display: none;
             position: fixed;
             z-index: 1000;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
             overflow-y: auto;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 40px 10px;
+            padding: 20px 10px;
             box-sizing: border-box;
+            justify-content: center;
+            align-items: center;
         }
         .modal-content {
             margin: auto;
             display: block;
-            max-width: 95%;
-            width: 1280px; /* Реальна ширина скріншоту */
-            height: auto;
+            max-width: 98%;
+            max-height: 95vh;
+            object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 0 25px rgba(255,255,255,0.2);
         }
@@ -130,21 +167,31 @@
             font-size: 40px;
             font-weight: bold;
             cursor: pointer;
-            user-select: none;
             z-index: 1001;
         }
     </style>
 </head>
 <body>
 
-    <h1>Архів прогнозів Windguru 🌊</h1>
+    <h1>Arquivo de Previsões 🌊</h1>
+    <h2>Zambujeira do Mar</h2>
 
     <div class="controls">
-        <label for="date-picker">Обери дату для перегляду:</label>
-        <input type="date" id="date-picker">
+        <div class="control-group">
+            <label for="date-picker">Selecionar Data:</label>
+            <input type="date" id="date-picker">
+        </div>
+        
+        <div class="control-group">
+            <label>Fonte de Dados:</label>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchSource('windguru')">Windguru</button>
+                <button class="tab-btn" onclick="switchSource('ipma')">IPMA</button>
+            </div>
+        </div>
     </div>
 
-    <div id="status" class="status-message">Завантаження списку скріншотів...</div>
+    <div id="status" class="status-message">A carregar arquivo do GitHub...</div>
     <div id="gallery" class="gallery"></div>
 
     <div id="imageModal" class="modal" onclick="closeModal()">
@@ -153,10 +200,9 @@
     </div>
 
     <script>
-        // НАЛАШТУВАННЯ: Обов'язково впиши свій нік та назву репозиторію
-        const githubUser = 'Skreebl'; 
+        // CONFIGURAÇÃO: Insere aqui o teu nome de utilizador do GitHub
+        const githubUser = 'ТВІЙ_GITHUB_НІКНЕЙМ'; 
         const repoName = 'Windbot';
-        const folderName = 'images'; 
 
         const datePicker = document.getElementById('date-picker');
         const gallery = document.getElementById('gallery');
@@ -164,42 +210,62 @@
         const modal = document.getElementById('imageModal');
         const fullImg = document.getElementById('full-image');
 
-        let allFiles = [];
+        let currentSource = 'windguru'; // 'windguru' ou 'ipma'
+        let windguruFiles = [];
+        let ipmaFiles = [];
 
-        // Встановлюємо сьогоднішню дату
-        const today = new Date().toISOString().split('T')[0];
-        datePicker.value = today;
+        // Define a data de hoje por defeito
+        datePicker.value = new Date().toISOString().split('T')[0];
 
-        // Крок 1: Беремо список файлів з GitHub
-        async function fetchFilesList() {
-            const url = `https://api.github.com/repos/${githubUser}/${repoName}/contents/${folderName}`;
+        // Carrega os dados de ambas as pastas do GitHub
+        async function fetchAllFiles() {
+            statusMessage.textContent = "A ler dados do GitHub...";
             try {
-                statusMessage.textContent = "Зчитуємо архів з GitHub...";
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Помилка API');
-                
-                const data = await response.json();
-                allFiles = data.filter(file => file.name.endsWith('.png'));
-                
+                // Pasta do Windguru (images)
+                const resWindguru = await fetch(`https://api.github.com/repos/${githubUser}/${repoName}/contents/images`);
+                if (resWindguru.ok) {
+                    const data = await resWindguru.json();
+                    windguruFiles = data.filter(file => file.name.endsWith('.png'));
+                }
+
+                // Pasta do IPMA (ipma)
+                const resIpma = await fetch(`https://api.github.com/repos/${githubUser}/${repoName}/contents/ipma`);
+                if (resIpma.ok) {
+                    const data = await resIpma.json();
+                    ipmaFiles = data.filter(file => file.name.endsWith('.png'));
+                }
+
                 statusMessage.textContent = "";
                 renderScreenshots();
             } catch (error) {
-                statusMessage.textContent = "Помилка завантаження архіву. Перевірте налаштування.";
+                statusMessage.textContent = "Erro ao carregar o arquivo. Verifique as configurações.";
                 console.error(error);
             }
         }
 
-        // Крок 2: Виводимо мініатюри
+        // Altera a fonte ativa (Windguru / IPMA)
+        function switchSource(source) {
+            currentSource = source;
+            
+            // Atualiza o design dos botões
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            renderScreenshots();
+        }
+
+        // Mostra as imagens na página
         function renderScreenshots() {
             gallery.innerHTML = "";
             const selectedDate = datePicker.value;
-
             if (!selectedDate) return;
 
-            const filteredFiles = allFiles.filter(file => file.name.startsWith(selectedDate + '_'));
+            // Escolhe a lista de ficheiros correta com base na aba ativa
+            const filesToFilter = (currentSource === 'windguru') ? windguruFiles : ipmaFiles;
+            const filteredFiles = filesToFilter.filter(file => file.name.startsWith(selectedDate + '_'));
 
             if (filteredFiles.length === 0) {
-                statusMessage.textContent = "За цей день немає збережених скріншотів 🤷‍♂️";
+                statusMessage.textContent = "Não há capturas guardadas para este dia 🤷‍♂️";
                 return;
             }
 
@@ -207,42 +273,42 @@
             filteredFiles.sort((a, b) => a.name.localeCompare(b.name));
 
             filteredFiles.forEach(file => {
+                // Extrai a hora do nome do ficheiro (ex: "2026-06-13_14-02.png" -> "14:02")
                 const timePart = file.name.split('_')[1].replace('.png', '').replace('-', ':');
 
                 const card = document.createElement('div');
                 card.className = 'screenshot-card';
-                // При кліку на картку відкриваємо модалку
                 card.onclick = () => openModal(file.path);
 
                 card.innerHTML = `
-                    <div class="screenshot-time">⏱ ${timePart}</div>
+                    <div class="screenshot-time">⏱ Captura às ${timePart}</div>
                     <div class="thumbnail-wrapper">
-                        <img src="${file.path}" alt="Прогноз погоди">
+                        <img src="${file.path}" alt="Previsão">
                     </div>
                 `;
                 gallery.appendChild(card);
             });
         }
 
-        // Функції для модального вікна (Повний екран)
         function openModal(imageSrc) {
             modal.style.display = "flex";
             fullImg.src = imageSrc;
-            document.body.style.overflow = "hidden"; // Забороняємо гортати задній фон
+            document.body.style.overflow = "hidden";
         }
 
         function closeModal() {
             modal.style.display = "none";
-            document.body.style.overflow = "auto"; // Повертаємо прокрутку сторінки
+            document.body.style.overflow = "auto";
         }
 
-        // Закриття по кнопці Esc
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeModal();
         });
 
         datePicker.addEventListener('change', renderScreenshots);
-        fetchFilesList();
+        
+        // Inicia o processo
+        fetchAllFiles();
     </script>
 </body>
 </html>
