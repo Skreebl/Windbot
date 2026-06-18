@@ -222,14 +222,14 @@
             statusMessage.textContent = "A ler dados do GitHub...";
             try {
                 // Pasta do Windguru (images)
-                const resWindguru = await fetch(`https://api.github.com/Skreebl/Windbot/tree/main/images`);
+                const resWindguru = await fetch(`https://api.github.com/Skreebl/Windbot/contents/images`);
                 if (resWindguru.ok) {
                     const data = await resWindguru.json();
                     windguruFiles = data.filter(file => file.name.endsWith('.png'));
                 }
 
                 // Pasta do IPMA (ipma)
-                const resIpma = await fetch(`https://api.github.com/Skreebl/Windbot/tree/main/ipma`);
+                const resIpma = await fetch(`https://api.github.com/Skreebl/Windbot/contents/ipma`);
                 if (resIpma.ok) {
                     const data = await resIpma.json();
                     ipmaFiles = data.filter(file => file.name.endsWith('.png'));
