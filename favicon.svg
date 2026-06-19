@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <style>
+      .bg { fill:#2B7AFA; }
+      .icon { fill:#fff; }
+    </style>
+  </defs>
+
+  <!-- rounded background -->
+  <rect x="0" y="0" rx="12" ry="12" width="64" height="64" class="bg"/>
+
+  <!-- simplified calendar shape -->
+  <rect x="10" y="12" width="34" height="28" rx="4" ry="4" class="icon"/>
+  <rect x="10" y="12" width="34" height="8" rx="2" ry="2" fill="#ffffff" opacity="0.18"/>
+  <circle cx="16" cy="16" r="2.2" fill="#2B7AFA"/>
+  <circle cx="24" cy="16" r="2.2" fill="#2B7AFA"/>
+
+  <!-- small cloud, overlapping right -->
+  <g transform="translate(36,28) scale(0.8)">
+    <path d="M12 6c-3.3 0-6 2.7-6 6H6c-2.2 0-4 1.8-4 4s1.8 4 4 4h12c3.3 0 6-2.7 6-6s-2.7-6-6-6c-.5 0-1 .1-1.5.2C20.4 12.1 16.6 8 12 8c-1.3 0-2.6.3-3.7.8z" fill="#ffffff"/>
+  </g>
+</svg>
