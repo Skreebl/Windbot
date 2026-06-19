@@ -24,13 +24,8 @@
         .tab-btn { flex: 1; padding: 10px; border: none; background: #e4e7e6; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; font-size: 14px; }
         .tab-btn.active { background: #0070f3; color: white; }
         
-        /* Оновлений контейнер з горизонтальним скролом */
         .preview-container { display: none; flex-direction: column; width: 100%; max-width: 1200px; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; margin-top: 10px; }
-        
-        /* Дозволяємо гортати таблицю вбік */
         .image-scroll-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; background: #fdfdfd; border-bottom: 1px solid #eee; }
-        
-        /* Картинка більше не стискається, а відображається у 100% розмірі */
         .preview-image { width: max-content; min-width: 100%; max-width: none; display: block; cursor: pointer; }
         
         .action-bar { display: flex; justify-content: flex-end; width: 100%; padding: 12px 15px; box-sizing: border-box; background: #ffffff; }
@@ -131,6 +126,10 @@
             }
             
             statusMessage.textContent = "";
+            
+            // Сортуємо список, щоб найновіший файл був першим
+            filtered.sort((a, b) => b.name.localeCompare(a.name));
+            
             const currentFile = filtered[0];
             currentFilePath = currentFile.path;
             currentFileSha = currentFile.sha;
