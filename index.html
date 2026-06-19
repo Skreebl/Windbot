@@ -4,11 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <title>Arquivo de Previsões — Zambujeira do Mar</title>
+    
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    
     <style>
         :root { var(--bg-color): #f4f7f6; var(--card-bg): #ffffff; var(--text-color): #333333; var(--accent-color): #0070f3; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        h1 { margin-bottom: 10px; text-align: center; font-size: 28px; }
-        h2 { margin: 0 0 20px 0; font-size: 18px; color: #666; font-weight: 400; }
+        
+        /* Стилі для нового заголовка з іконкою */
+        .header-container { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 5px; }
+        .header-icon { width: 36px; height: 36px; }
+        h1 { margin: 0; text-align: center; font-size: 28px; }
+        
+        h2 { margin: 5px 0 20px 0; font-size: 18px; color: #666; font-weight: 400; text-align: center; }
         .controls { margin-bottom: 25px; display: flex; flex-direction: column; gap: 15px; align-items: center; background: #ffffff; padding: 20px 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 100%; max-width: 400px; box-sizing: border-box; }
         .control-group { display: flex; flex-direction: column; gap: 5px; width: 100%; }
         label { font-weight: 600; font-size: 14px; }
@@ -35,8 +43,13 @@
     </style>
 </head>
 <body>
-    <h1>Arquivo de Previsões 🌊</h1>
+    
+    <div class="header-container">
+        <img src="icons/header_icon.svg" alt="Weather Logo" class="header-icon">
+        <h1>Arquivo de Previsões</h1>
+    </div>
     <h2>Zambujeira do Mar</h2>
+
     <div class="controls">
         <div class="control-group">
             <label>Selecionar Data:</label>
@@ -139,9 +152,8 @@
             }
         }
 
-        // ФУНКЦІЯ ВИДАЛЕННЯ ФАЙЛУ
         async function deleteCurrentFile(event) {
-            event.stopPropagation(); // Щоб модалка не закрилась завчасно
+            event.stopPropagation(); 
             
             let token = localStorage.getItem('gh_token');
             if (!token) {
@@ -169,11 +181,11 @@
                 if (response.ok) {
                     alert("Captura eliminada com sucesso!");
                     closeModal();
-                    fetchAllFiles(); // Перезавантажуємо галерею
+                    fetchAllFiles(); 
                 } else {
                     const errData = await response.json();
-                    alert("Erro al eliminar: " + (errData.message || response.statusText));
-                    localStorage.removeItem('gh_token'); // Скидаємо токен, якщо він не підійшов
+                    alert("Erro ao eliminar: " + (errData.message || response.statusText));
+                    localStorage.removeItem('gh_token'); 
                     statusMessage.textContent = "";
                 }
             } catch (error) {
