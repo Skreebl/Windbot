@@ -171,6 +171,7 @@
         const t = (f.name.split('_')[1]||'').replace('.png','').replace('.jpg','').replace('-',':');
         const card = document.createElement('div'); card.className='card';
         const img = document.createElement('img'); img.className='thumb';
+        // prefer download_url if available (from API), fallback to raw path
         img.src = f.download_url || `/${f.path}`;
         img.alt = f.name;
         img.loading = 'lazy';
@@ -188,11 +189,12 @@
     }
 
     function closeModal(e){
-      if(e && e.target !== modal) return;
+      if(e && e.target !== modal) return; // click inside image shouldn't close
       modal.classList.remove('open');
       currentFile = null;
     }
 
+    // delete logic uses GitHub API and a user PAT stored in localStorage (keeps token client-side only)
     deleteBtn.addEventListener('click', async (ev)=>{
       ev.stopPropagation();
       if(!currentFile) return alert('Nenhum ficheiro selecionado');
@@ -218,8 +220,10 @@
       finally{ deleteBtn.disabled=false; deleteBtn.textContent='Eliminar'; }
     });
 
+    // update when date changes
     dateInput.addEventListener('change', render);
 
+    // initial load
     fetchAll();
   </script>
 </body>
