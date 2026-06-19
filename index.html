@@ -2,7 +2,6 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <!-- Забороняємо браузеру ламати масштаб всього сайту при зумі -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <title>Arquivo de Previsões — Zambujeira do Mar</title>
     <style>
@@ -25,10 +24,14 @@
         .screenshot-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
         .status-message { padding: 40px; text-align: center; color: #888; }
         
-        /* Модальне вікно */
+        /* Modal */
         .modal { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); justify-content: center; align-items: center; overflow: auto; }
         .modal-content { max-width: 100%; max-height: 100vh; transition: transform 0.1s ease-out; transform-origin: center center; }
         .close-btn { position: fixed; top: 15px; right: 25px; color: #fff; font-size: 45px; cursor: pointer; z-index: 1002; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); border-radius: 50%; }
+        
+        /* Botão Eliminar */
+        .delete-btn { position: fixed; bottom: 30px; background: #ff3b30; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; z-index: 1002; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: background 0.2s; }
+        .delete-btn:hover { background: #e03126; }
     </style>
 </head>
 <body>
@@ -52,6 +55,7 @@
     
     <div id="imageModal" class="modal" onclick="closeModal()">
         <span class="close-btn" onclick="closeModal()">&times;</span>
+        <button id="delete-btn" class="delete-btn" onclick="deleteCurrentFile(event)">🗑 Eliminar</button>
         <img class="modal-content" id="full-image" onclick="event.stopPropagation()">
     </div>
 
@@ -67,6 +71,10 @@
         let currentSource = 'windguru';
         let windguruFiles = [];
         let ipmaFiles = [];
+        
+        let currentFilePath = '';
+        let currentFileSha = '';
+
         datePicker.value = new Date().toISOString().split('T')[0];
 
         async function fetchAllFiles() {
@@ -96,30 +104,28 @@
                 const time = f.name.split('_')[1].replace('.png', '').replace('-', ':');
                 const card = document.createElement('div');
                 card.className = 'screenshot-card';
-                card.onclick = () => openModal(f.path);
+                card.onclick = () => openModal(f.path, f.sha);
                 card.innerHTML = `<div class="screenshot-time">⏱ ${time}</div><div class="thumbnail-wrapper"><img src="${f.path}"></div>`;
                 gallery.appendChild(card);
             });
         }
 
-        // ВІДКРИТТЯ МОДАЛКИ (З підтримкою кнопки "Назад")
-        function openModal(imageSrc) {
+        function openModal(imageSrc, imageSha) {
+            currentFilePath = imageSrc;
+            currentFileSha = imageSha;
             modal.style.display = "flex";
             fullImg.src = imageSrc;
             document.body.style.overflow = "hidden";
             
-            // Робимо віртуальний крок вперед в історії браузера
             if (window.location.hash !== '#preview') {
                 history.pushState({modalOpen: true}, '', '#preview');
             }
         }
 
-        // ЗАКРИТТЯ МОДАЛКИ + Скидання масштабу
         function closeModal() {
             modal.style.display = "none";
             document.body.style.overflow = "auto";
             
-            // Системне повернення всього сайту до нормального масштабу 1:1
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) {
                 viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
@@ -128,24 +134,62 @@
                 }, 300);
             }
 
-            // Якщо закрили хрестиком, прибираємо хеш з історії, щоб кнопка "назад" потім не ламалась
             if (window.location.hash === '#preview') {
                 history.back();
             }
         }
 
-        // Обробка системної кнопки "Назад" або свайпу на телефоні
+        // ФУНКЦІЯ ВИДАЛЕННЯ ФАЙЛУ
+        async function deleteCurrentFile(event) {
+            event.stopPropagation(); // Щоб модалка не закрилась завчасно
+            
+            let token = localStorage.getItem('gh_token');
+            if (!token) {
+                token = prompt("Insira o seu GitHub Personal Access Token (PAT):");
+                if (!token) return;
+                localStorage.setItem('gh_token', token);
+            }
+
+            if (!confirm("Tem a certeza que deseja eliminar esta captura de ecrã?")) return;
+
+            try {
+                statusMessage.textContent = "A eliminar ficheiro...";
+                const response = await fetch(`https://api.github.com/repos/${githubUser}/${repoName}/contents/${currentFilePath}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Delete screenshot ${currentFilePath} via web panel`,
+                        sha: currentFileSha
+                    })
+                });
+
+                if (response.ok) {
+                    alert("Captura eliminada com sucesso!");
+                    closeModal();
+                    fetchAllFiles(); // Перезавантажуємо галерею
+                } else {
+                    const errData = await response.json();
+                    alert("Erro al eliminar: " + (errData.message || response.statusText));
+                    localStorage.removeItem('gh_token'); // Скидаємо токен, якщо він не підійшов
+                    statusMessage.textContent = "";
+                }
+            } catch (error) {
+                alert("Erro na rede ao tentar eliminar.");
+                statusMessage.textContent = "";
+            }
+        }
+
         window.addEventListener('popstate', function (event) {
-            // Якщо користувач повернувся назад і хеш #preview зник — закриваємо вікно
             if (window.location.hash !== '#preview' && modal.style.display === "flex") {
                 modal.style.display = "none";
                 document.body.style.overflow = "auto";
             }
         });
 
-        // Закриття по Escape для ПК
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-        
         datePicker.addEventListener('change', renderScreenshots);
         fetchAllFiles();
     </script>
